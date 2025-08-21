@@ -22,9 +22,6 @@ discover_resources() {
   # Monta URL da API do GitHub
   local index_url="https://api.github.com/repos/$user/$repo/contents/distros/$DISTRO?ref=$branch"
 
-  # Mostra a URL para depuração
-  echo "🔍 URL da API montada: $index_url"
-
   # Obtém lista de arquivos
   local files=$(curl -s "$index_url" | grep '"name":' | cut -d '"' -f4)
 
@@ -32,10 +29,7 @@ discover_resources() {
   for file in $files; do
     if [[ "$file" =~ ^(.+)\.sh$ ]]; then
       local name="${BASH_REMATCH[1]}"
-      local check_file="${name}-check.sh"
-      if echo "$files" | grep -q "$check_file"; then
-        resources+=("$name")
-      fi
+      resources+=("$name")
     fi
   done
 }
