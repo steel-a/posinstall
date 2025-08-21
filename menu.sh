@@ -19,13 +19,12 @@ discover_resources() {
   local branch=$(echo "$REPO_BASE" | cut -d'/' -f6)
 
   local index_url="https://api.github.com/repos/$user/$repo/contents/distros/$DISTRO?ref=$branch"
-
   local files=$(curl -s "$index_url" | grep '"name":' | cut -d '"' -f4)
 
   for file in $files; do
     # Ignora arquivos -check.sh
-    if [[ "$file" =~ ^(.+)\.sh$ && ! "$file" =~ -check\.sh$ ]]; then
-      local name="${file%.sh}"  # Remove a extensão .sh com segurança
+    if [[ "$file" == *.sh && "$file" != *-check.sh ]]; then
+      local name="${file%.sh}"
       resources+=("$name")
     fi
   done
@@ -33,15 +32,9 @@ discover_resources() {
 
 
 
-
-
-
 # Função para exibir status de cada recurso
 show_resource_status() {
   local name="$1"
-  if [[ -z "$name" ]]; then
-    return
-  fi  
   local install_script="$BASE/${name}.sh"
   local check_script="$BASE/${name}-check.sh"
 
@@ -77,7 +70,9 @@ discover_resources
 echo ""
 echo "🔧 Menu de Pós-Instalação para $DISTRO"
 for name in "${resources[@]}"; do
-  show_resource_status "$name"
+  if [[ -n "$name" ]]; then
+    show_resource_status "$name"
+  fi
 done
 echo ""
 
