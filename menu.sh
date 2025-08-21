@@ -14,21 +14,18 @@ script_exists() {
 
 # Função para extrair nomes de recursos válidos
 discover_resources() {
-  # Extrai partes da URL
   local user=$(echo "$REPO_BASE" | cut -d'/' -f4)
   local repo=$(echo "$REPO_BASE" | cut -d'/' -f5)
   local branch=$(echo "$REPO_BASE" | cut -d'/' -f6)
 
-  # Monta URL da API
   local index_url="https://api.github.com/repos/$user/$repo/contents/distros/$DISTRO?ref=$branch"
 
-  # Obtém lista de arquivos
   local files=$(curl -s "$index_url" | grep '"name":' | cut -d '"' -f4)
 
-  # Adiciona apenas scripts que não terminam com -check.sh
   for file in $files; do
+    # Ignora arquivos -check.sh
     if [[ "$file" =~ ^(.+)\.sh$ && ! "$file" =~ -check\.sh$ ]]; then
-      local name="${BASH_REMATCH[1]}"
+      local name="${file%.sh}"  # Remove a extensão .sh com segurança
       resources+=("$name")
     fi
   done
@@ -38,9 +35,13 @@ discover_resources() {
 
 
 
+
 # Função para exibir status de cada recurso
 show_resource_status() {
   local name="$1"
+  if [[ -z "$name" ]]; then
+    return
+  fi  
   local install_script="$BASE/${name}.sh"
   local check_script="$BASE/${name}-check.sh"
 
