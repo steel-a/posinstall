@@ -14,12 +14,18 @@ script_exists() {
 
 # Função para extrair nomes de recursos válidos
 discover_resources() {
-  local 
+  # Extrai partes da URL REPO_BASE
+  local user=$(echo "$REPO_BASE" | cut -d'/' -f4)
+  local repo=$(echo "$REPO_BASE" | cut -d'/' -f5)
+  local branch=$(echo "$REPO_BASE" | cut -d'/' -f6)
 
-index_url="${REPO_BASE/raw.githubusercontent.com/api.github.com/repos}/contents/distros/$DISTRO"
+  # Monta URL da API do GitHub
+  local index_url="https://api.github.com/repos/$user/$repo/contents/distros/$DISTRO?ref=$branch"
 
+  # Obtém lista de arquivos
   local files=$(curl -s "$index_url" | grep '"name":' | cut -d '"' -f4)
 
+  # Filtra recursos válidos
   for file in $files; do
     if [[ "$file" =~ ^(.+)\.sh$ ]]; then
       local name="${BASH_REMATCH[1]}"
@@ -30,6 +36,7 @@ index_url="${REPO_BASE/raw.githubusercontent.com/api.github.com/repos}/contents/
     fi
   done
 }
+
 
 # Função para exibir status de cada recurso
 show_resource_status() {
