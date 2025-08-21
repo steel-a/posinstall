@@ -21,14 +21,17 @@ discover_resources() {
   local index_url="https://api.github.com/repos/$user/$repo/contents/distros/$DISTRO?ref=$branch"
   local files=$(curl -s "$index_url" | grep '"name":' | cut -d '"' -f4)
 
-  for file in $files; do
-    # Ignora arquivos -check.sh
+  while IFS= read -r file; do
+    file=$(echo "$file" | tr -d '\r')  # remove caracteres invisíveis
     if [[ "$file" == *.sh && "$file" != *-check.sh ]]; then
       local name="${file%.sh}"
-      resources+=("$name")
+      if [[ -n "$name" ]]; then
+        resources+=("$name")
+      fi
     fi
-  done
+  done <<< "$files"
 }
+
 
 
 
@@ -74,6 +77,7 @@ for name in "${resources[@]}"; do
     show_resource_status "$name"
   fi
 done
+
 echo ""
 
 # Lê escolha
