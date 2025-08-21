@@ -22,6 +22,8 @@ discover_resources() {
   # Monta URL da API do GitHub
   local index_url="https://api.github.com/repos/$user/$repo/contents/distros/$DISTRO?ref=$branch"
 
+  echo $index_url
+
   # Obtém lista de arquivos
   local files=$(curl -s "$index_url" | grep '"name":' | cut -d '"' -f4)
 
