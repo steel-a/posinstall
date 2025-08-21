@@ -53,15 +53,15 @@ show_resource_status() {
   fi
 
   if [ "$has_check" = false ]; then
-    echo "🟡 $name [disponível para instalar]"
+    echo "⚠️ $name (checagem ausente)"
     return
   fi
 
   local status=$(bash <(curl -sSL "$check_script"))
   if [[ "$status" == "🟢" ]]; then
-    echo "🟢 $name [instalado]"
+    echo "🟢 $name [checado instalado]"
   else
-    echo "🟡 $name [disponível para instalar]"
+    echo "🟡 $name [checado não instalado]"
   fi
 }
 
