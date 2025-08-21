@@ -22,11 +22,10 @@ discover_resources() {
   # Monta URL da API
   local index_url="https://api.github.com/repos/$user/$repo/contents/distros/$DISTRO?ref=$branch"
 
-  # Faz requisição e extrai nomes dos arquivos
-  local response=$(curl -s "$index_url")
-  local files=$(echo "$response" | grep '"name":' | cut -d '"' -f4)
+  # Obtém lista de arquivos
+  local files=$(curl -s "$index_url" | grep '"name":' | cut -d '"' -f4)
 
-  # Adiciona apenas os scripts que NÃO terminam com -check.sh
+  # Adiciona apenas scripts que não terminam com -check.sh
   for file in $files; do
     if [[ "$file" =~ ^(.+)\.sh$ && ! "$file" =~ -check\.sh$ ]]; then
       local name="${BASH_REMATCH[1]}"
@@ -34,6 +33,7 @@ discover_resources() {
     fi
   done
 }
+
 
 
 
@@ -56,7 +56,7 @@ show_resource_status() {
   fi
 
   if [ "$has_check" = false ]; then
-    echo "⚠️ $name (checagem ausente)"
+    echo "🟡 $name [disponível para instalar]"
     return
   fi
 
@@ -67,6 +67,7 @@ show_resource_status() {
     echo "🟡 $name [disponível para instalar]"
   fi
 }
+
 
 # Descobre recursos
 discover_resources
