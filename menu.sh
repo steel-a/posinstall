@@ -3,6 +3,8 @@
 DISTRO="$1"
 REPO_BASE="$2"
 BASE="$REPO_BASE/distros/$DISTRO"
+CHECKS_SCRIPT_URL="$REPO_BASE/checks.sh"
+CHECKS_SCRIPT_PATH="/tmp/shared-checks.sh"
 
 # Codifica strings para uso seguro em URLs
 urlencode() {
@@ -23,6 +25,14 @@ urlencode() {
 
 script_exists() {
   curl --head --silent --fail "$1" > /dev/null
+}
+
+download_checks_script_once() {
+  if [[ ! -f "$CHECKS_SCRIPT_PATH" ]]; then
+    echo "⬇️  Baixando checks.sh compartilhado..."
+    curl -sSL "$CHECKS_SCRIPT_URL" -o "$CHECKS_SCRIPT_PATH"
+    chmod +x "$CHECKS_SCRIPT_PATH"
+  fi
 }
 
 discover_resources() {
@@ -57,21 +67,25 @@ show_resource_status() {
   script_exists "$check_script" && has_check=true
 
   if [ "$has_install" = false ]; then
-    echo "❌  " # Erro no script
+    echo "❌  "
     return
   fi
 
-  if [ "$has_check" = false ]; then
-    echo "  -" # Checagem ausente
-    return
-  fi
-
-  if bash <(curl -sSL "$check_script"); then
-    echo "[x]" # Checado e instalado
+  if [ "$has_check" = true ]; then
+    if bash <(curl -sSL "$check_script"); then
+      echo "[x]"
+    else
+      echo "[ ]"
+    fi
   else
-    echo "[ ]" # Checado e não instalado
+    download_checks_script_once
+    local check_target=$(basename "$name")
+    if "$CHECKS_SCRIPT_PATH" "$check_target"; then
+      echo "[x]"
+    else
+      echo "[ ]"
+    fi
   fi
-
 }
 
 # Verifica se o terminal é interativo
@@ -80,9 +94,9 @@ if [[ ! -t 1 ]]; then
   exit 1
 fi
 
-while true; do
-  discover_resources
+discover_resources
 
+while true; do
   menu_list=()
   for name in "${resources[@]}"; do
     if [[ -n "$name" ]]; then
@@ -101,9 +115,7 @@ while true; do
       --layout=reverse
   )
 
-
   opcao=$(echo "$selected" | sed -E 's/^\s*(\[[x ]\]|❌|-) +//')
-  
 
   if [[ "$opcao" == "Sair" ]]; then
     echo "👋 Saindo..."
