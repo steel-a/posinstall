@@ -74,11 +74,14 @@ while true; do
 
   menu_list+=("Sair - ❌ Encerrar o script")
 
-  selected=$(printf "%s\n" "${menu_list[@]}" | fzf \
+selected=$(printf "%s\n" "${menu_list[@]}" | fzf \
   --prompt="🔧 Pós-Instalação para $DISTRO. Use as setas para navegar e Enter para selecionar:" \
   --height=100% \
   --border \
-  --layout=reverse
+  --layout=reverse \
+  --header="🔧 Menu de Pós-Instalação para $DISTRO\nUse as setas para navegar e Enter para selecionar:")
+)
+
   
   opcao=$(echo "$selected" | cut -d' ' -f1)
 
