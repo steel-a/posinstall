@@ -38,4 +38,4 @@ sudo mv "$TEMP" "$FILE"
 echo "✅ sources.list ajustado com sucesso!"
 echo "🔄 Atualizando lista de pacotes..."
 sudo apt update
-sudo apt modernize-sources
+sudo apt modernize-sources -y
