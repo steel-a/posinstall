@@ -38,6 +38,7 @@ discover_resources() {
     }
 
 
+
     fetch_scripts_recursively "$api_url" "distros/$DISTRO"
 }
 
