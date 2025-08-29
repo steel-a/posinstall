@@ -128,7 +128,7 @@ while true; do
   if script_exists "$install_script"; then
     echo ""
     echo "🔧 Instalando $opcao..."
-    bash <(curl -sSL "$install_script")
+    bash <(curl -SL "$install_script")
   else
     echo "❌ Opção inválida ou script não disponível."
   fi
