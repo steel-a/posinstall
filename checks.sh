@@ -47,7 +47,12 @@ hyprland)
   dpkg -s xdg-desktop-portal-hyprland >/dev/null 2>&1 &&
   dpkg -s xdg-desktop-portal-wlr >/dev/null 2>&1
   ;;
-
+audio-desktop)
+  command -v pavucontrol >/dev/null 2>&1 &&
+  command -v pulsemixer >/dev/null 2>&1 &&
+  command -v pamixer >/dev/null 2>&1 &&
+  dpkg -s pipewire-audio >/dev/null 2>&1
+  ;;
   docker) command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1 ;;
   "Teste 04") exit 0 ;;
   "Teste 05") [ -f "/opt/teste04/instalado.flag" ] ;;
