@@ -25,18 +25,21 @@ show_menu() {
   local options=()
   local found_items=false
 
+  # Processa blocos JSON manualmente
   while IFS= read -r line; do
-    name=$(echo "$line" | grep '"name":' | cut -d '"' -f4)
-    type=$(echo "$line" | grep '"type":' | cut -d '"' -f4)
+    if echo "$line" | grep -q '"name":'; then
+      name=$(echo "$line" | cut -d '"' -f4)
+    fi
+    if echo "$line" | grep -q '"type":'; then
+      type=$(echo "$line" | cut -d '"' -f4)
 
-    [[ -z "$name" || -z "$type" ]] && continue
-
-    if [[ "$type" == "dir" ]]; then
-      options+=("$name/" "📁 Pasta")
-      found_items=true
-    elif [[ "$type" == "file" && "$name" == *.sh && "$name" != *-check.sh ]]; then
-      options+=("${name%.sh}" "📦 Script")
-      found_items=true
+      if [[ "$type" == "dir" ]]; then
+        options+=("$name/" "📁 Pasta")
+        found_items=true
+      elif [[ "$type" == "file" && "$name" == *.sh && "$name" != *-check.sh ]]; then
+        options+=("${name%.sh}" "📦 Script")
+        found_items=true
+      fi
     fi
   done <<< "$(echo "$json" | tr -d '\r')"
 
