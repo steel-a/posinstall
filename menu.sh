@@ -55,6 +55,12 @@ show_resource_status() {
   fi
 }
 
+# Verifica se o terminal é interativo
+if [[ ! -t 1 ]]; then
+  echo "❌ Terminal não interativo. Execute o script em um terminal real."
+  exit 1
+fi
+
 while true; do
   discover_resources
 
@@ -73,8 +79,7 @@ while true; do
 
   menu_list+=("Sair - ❌ Encerrar o script")
 
-  height=$(( ${#menu_list[@]} + 2 ))
-  selected=$(printf "%s\n" "${menu_list[@]}" | fzf --prompt="Selecione o recurso: " --height=~100% --border --layout=reverse)
+  selected=$(printf "%s\n" "${menu_list[@]}" | fzf --prompt="Selecione o recurso: " --height=100% --border --layout=reverse)
 
   opcao=$(echo "$selected" | cut -d' ' -f1)
 
