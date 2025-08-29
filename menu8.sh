@@ -107,6 +107,7 @@ while true; do
   \[[x ]\]
   
   |❌  ) //')
+  
 
   if [[ "$opcao" == "Sair" ]]; then
     echo "👋 Saindo..."
