@@ -18,19 +18,16 @@ case "$RESOURCE" in
     command -v dmenu >/dev/null 2>&1 &&
     command -v slock >/dev/null 2>&1
     ;;
-  "Update sources.list")
-    grep -E '^deb ' /etc/apt/sources.list 2>/dev/null | grep -qE 'main.*contrib.*non-free.*non-free-firmware'
-    ;;
   "Update debian.sources")
-    grep -rh "^Components:" /etc/apt/sources.list.d/*.sources 2>/dev/null |
-    grep -q "main" &&
-    grep -rh "^Components:" /etc/apt/sources.list.d/*.sources 2>/dev/null |
-    grep -q "contrib" &&
-    grep -rh "^Components:" /etc/apt/sources.list.d/*.sources 2>/dev/null |
-    grep -q "non-free" &&
-    grep -rh "^Components:" /etc/apt/sources.list.d/*.sources 2>/dev/null |
-    grep -q "non-free-firmware"
+    for line in $(grep "^Components:" /etc/apt/sources.list.d/debian.sources); do
+      echo "$line" | grep -q "main" &&
+      echo "$line" | grep -q "contrib" &&
+      echo "$line" | grep -q "non-free" &&
+      echo "$line" | grep -q "non-free-firmware"
+      [ $? -ne 0 ] && exit 1
+    done
     ;;
+
   hyprland) exit 0 ;;
   docker) command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1 ;;
   "Teste 04") exit 0 ;;
