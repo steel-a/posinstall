@@ -22,23 +22,16 @@ discover_resources() {
   local index_url="https://api.github.com/repos/$user/$repo/contents/$path?ref=$branch"
   local response=$(curl -s "$index_url")
 
-  # Processa o JSON mantendo pares nome/tipo
-  local name=""
-  local type=""
-  while IFS= read -r line; do
+  # Extrai linhas com nome e tipo
+  echo "$response" | grep -E '"name"|"type"' | while read -r line; do
     if echo "$line" | grep -q '"name":'; then
       name=$(echo "$line" | cut -d'"' -f4)
-    elif echo "$line" | grep -q '"type":'; then
-      type=$(echo "$line" | cut -d'"' -f4)
-      if [[ "$type" == "dir" ]]; then
-        folders+=("$name")
-      elif [[ "$type" == "file" && "$name" == *.sh && "$name" != *-check.sh ]]; then
-        resources+=("${name%.sh}")
-      fi
-      name=""
-      type=""
+    elif echo "$line" | grep -q '"type": "dir"'; then
+      folders+=("$name")
+    elif echo "$line" | grep -q '"type": "file"' && [[ "$name" == *.sh && "$name" != *-check.sh ]]; then
+      resources+=("${name%.sh}")
     fi
-  done <<< "$response"
+  done
 }
 
 show_resource_status() {
