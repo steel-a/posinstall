@@ -15,7 +15,7 @@ for file in "$SOURCE_DIR"/*.sources; do
     echo "🔍 Verificando: $file"
 
     # Cria backup antes de modificar
-    cp "$file" "$file.bak"
+    sudo cp "$file" "$file.bak"
 
     # Extrai linhas de Components
     while IFS= read -r line; do
