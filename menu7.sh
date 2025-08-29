@@ -101,7 +101,10 @@ while true; do
       --layout=reverse
   )
 
-  opcao=$(echo "$selected" | awk -F' - ' '{print $1}')
+
+  opcao=$(echo "$selected" | sed -E 's/^(
+  \[[x ]\]
+  |❌  ) //')
   if [[ "$opcao" == "Sair" ]]; then
     echo "👋 Saindo..."
     break
