@@ -102,11 +102,7 @@ while true; do
   )
 
 
-  opcao=$(echo "$selected" | sed -E 's/^(
-  
-  \[[x ]\]
-  
-  |❌  ) //')
+  opcao=$(echo "$selected" | sed -E 's/^(\[[x ]\]|❌  ) //')
   
 
   if [[ "$opcao" == "Sair" ]]; then
