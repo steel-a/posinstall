@@ -2,7 +2,12 @@
 
 DISTRO="$1"
 REPO_BASE="$2"
-BASE="$REPO_BASE/distros/$DISTRO"
+
+# Verifica dependência do jq
+if ! command -v jq &> /dev/null; then
+  echo "❌ 'jq' não está instalado. Instale com: sudo apt install jq"
+  exit 1
+fi
 
 script_exists() {
   curl --head --silent --fail "$1" > /dev/null
@@ -14,22 +19,37 @@ discover_resources() {
   local repo=$(echo "$REPO_BASE" | cut -d'/' -f5)
   local branch=$(echo "$REPO_BASE" | cut -d'/' -f6)
 
-  local index_url="https://api.github.com/repos/$user/$repo/contents/distros/$DISTRO?ref=$branch"
-  local files=$(curl -s "$index_url" | grep '"name":' | cut -d '"' -f4)
+  fetch_files_recursively() {
+    local path="$1"
+    local api_url="https://api.github.com/repos/$user/$repo/contents/$path?ref=$branch"
+    local response=$(curl -s "$api_url")
 
-  while IFS= read -r file; do
-    file=$(echo "$file" | tr -d '\r')
-    if [[ "$file" == *.sh && "$file" != *-check.sh ]]; then
-      local name="${file%.sh}"
-      [[ -n "$name" ]] && resources+=("$name")
-    fi
-  done <<< "$files"
+    echo "$response" | jq -r '.[] | @base64' | while read -r item; do
+      _jq() {
+        echo "$item" | base64 --decode | jq -r "$1"
+      }
+
+      local type=$(_jq '.type')
+      local name=$(_jq '.name')
+      local full_path=$(_jq '.path')
+
+      if [[ "$type" == "dir" ]]; then
+        fetch_files_recursively "$full_path"
+      elif [[ "$type" == "file" && "$name" == *.sh && "$name" != *-check.sh ]]; then
+        local resource_name="${full_path#distros/$DISTRO/}"
+        resource_name="${resource_name%.sh}"
+        [[ -n "$resource_name" ]] && resources+=("$resource_name")
+      fi
+    done
+  }
+
+  fetch_files_recursively "distros/$DISTRO"
 }
 
 show_resource_status() {
   local name="$1"
-  local install_script="$BASE/${name}.sh"
-  local check_script="$BASE/${name}-check.sh"
+  local install_script="$REPO_BASE/distros/$DISTRO/${name}.sh"
+  local check_script="$REPO_BASE/distros/$DISTRO/${name}-check.sh"
 
   local has_install=false
   local has_check=false
@@ -89,7 +109,7 @@ while true; do
     break
   fi
 
-  install_script="$BASE/${opcao}.sh"
+  install_script="$REPO_BASE/distros/$DISTRO/${opcao}.sh"
   if script_exists "$install_script"; then
     echo ""
     echo "🔧 Instalando $opcao..."
