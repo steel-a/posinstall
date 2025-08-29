@@ -16,21 +16,22 @@ discover_resources() {
   local repo=$(echo "$REPO_BASE" | cut -d'/' -f5)
   local branch=$(echo "$REPO_BASE" | cut -d'/' -f6)
 
-  local index_url="https://api.github.com/repos/$user/$repo/contents/distros/$DISTRO/$CURRENT_PATH?ref=$branch"
+  local path="distros/$DISTRO"
+  [[ -n "$CURRENT_PATH" ]] && path="$path/$CURRENT_PATH"
+
+  local index_url="https://api.github.com/repos/$user/$repo/contents/$path?ref=$branch"
   local response=$(curl -s "$index_url")
 
-  # Listar arquivos .sh
-  echo "$response" | grep '"name":' | cut -d '"' -f4 | while read -r file; do
-    if [[ "$file" == *.sh && "$file" != *-check.sh ]]; then
-      local name="${file%.sh}"
-      [[ -n "$name" ]] && resources+=("$name")
-    fi
-  done
+  while read -r line; do
+    name=$(echo "$line" | grep '"name":' | cut -d'"' -f4)
+    type=$(echo "$line" | grep '"type":' | cut -d'"' -f4)
 
-  # Listar subpastas
-  echo "$response" | grep '"type": "dir"' -B1 | grep '"name":' | cut -d '"' -f4 | while read -r folder; do
-    folders+=("$folder")
-  done
+    if [[ "$type" == "file" && "$name" == *.sh && "$name" != *-check.sh ]]; then
+      resources+=("${name%.sh}")
+    elif [[ "$type" == "dir" ]]; then
+      folders+=("$name")
+    fi
+  done <<< "$(echo "$response" | grep -E '"name":|"type":')"
 }
 
 show_resource_status() {
@@ -73,12 +74,12 @@ while true; do
 
   menu_list=()
 
-  # Adiciona pastas ao menu
+  # Adiciona pastas
   for folder in "${folders[@]}"; do
-    menu_list+=("📁 $folder")
+    menu_list+=("$folder - 📁 Abrir pasta")
   done
 
-  # Adiciona scripts ao menu
+  # Adiciona scripts
   for name in "${resources[@]}"; do
     if [[ -n "$name" ]]; then
       status=$(show_resource_status "$name" | tail -n1)
@@ -86,29 +87,29 @@ while true; do
     fi
   done
 
-  # Adiciona opções de navegação
-  [[ -n "$CURRENT_PATH" ]] && menu_list+=("🔙 Voltar")
-  menu_list+=("❌ Sair")
+  # Opções de navegação
+  [[ -n "$CURRENT_PATH" ]] && menu_list+=("Voltar - 🔙 Retornar à pasta anterior")
+  menu_list+=("Sair - ❌ Encerrar o script")
 
   selected=$(
     printf "%s\n" "${menu_list[@]}" | fzf \
-      --prompt="📂 Navegando em: ${DISTRO}/${CURRENT_PATH:-raiz} ➜ " \
+      --prompt="🔧 Pós-Instalação para $DISTRO. Use as setas para navegar e Enter para selecionar:" \
       --height=100% \
       --border \
       --layout=reverse
   )
 
-  opcao=$(echo "$selected" | cut -d' ' -f2)
+  opcao=$(echo "$selected" | cut -d' ' -f1)
 
-  if [[ "$selected" == "❌ Sair" ]]; then
+  if [[ "$opcao" == "Sair" ]]; then
     echo "👋 Saindo..."
     break
-  elif [[ "$selected" == "🔙 Voltar" ]]; then
+  elif [[ "$opcao" == "Voltar" ]]; then
     CURRENT_PATH=$(dirname "$CURRENT_PATH")
     [[ "$CURRENT_PATH" == "." ]] && CURRENT_PATH=""
-  elif [[ "$selected" == 📁* ]]; then
+  elif [[ " ${folders[*]} " =~ " $opcao " ]]; then
     CURRENT_PATH="${CURRENT_PATH}/${opcao}"
-    CURRENT_PATH="${CURRENT_PATH#/}"  # remove barra inicial
+    CURRENT_PATH="${CURRENT_PATH#/}"
   else
     install_script="$BASE/$CURRENT_PATH/${opcao}.sh"
     if script_exists "$install_script"; then
