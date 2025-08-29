@@ -25,23 +25,23 @@ show_menu() {
   local options=()
   local found_items=false
 
-  # Processa blocos JSON manualmente
-  while IFS= read -r line; do
-    if echo "$line" | grep -q '"name":'; then
-      name=$(echo "$line" | cut -d '"' -f4)
-    fi
-    if echo "$line" | grep -q '"type":'; then
-      type=$(echo "$line" | cut -d '"' -f4)
+  # Divide o JSON em blocos por item
+  IFS=$'\n'
+  for block in $(echo "$json" | tr -d '\r' | awk '/^{/{f=1}f; /}/{f=0}' | sed 's/,$//'); do
+    name=$(echo "$block" | grep '"name":' | head -n1 | cut -d '"' -f4)
+    type=$(echo "$block" | grep '"type":' | head -n1 | cut -d '"' -f4)
 
-      if [[ "$type" == "dir" ]]; then
-        options+=("$name/" "📁 Pasta")
-        found_items=true
-      elif [[ "$type" == "file" && "$name" == *.sh && "$name" != *-check.sh ]]; then
-        options+=("${name%.sh}" "📦 Script")
-        found_items=true
-      fi
+    [[ -z "$name" || -z "$type" ]] && continue
+
+    if [[ "$type" == "dir" ]]; then
+      options+=("$name/" "📁 Pasta")
+      found_items=true
+    elif [[ "$type" == "file" && "$name" == *.sh && "$name" != *-check.sh ]]; then
+      options+=("${name%.sh}" "📦 Script")
+      found_items=true
     fi
-  done <<< "$(echo "$json" | tr -d '\r')"
+  done
+  unset IFS
 
   options+=("sair" "🚪 Sair")
 
@@ -65,13 +65,4 @@ show_menu() {
     show_menu "$path/${CHOICE%/}"
   else
     local script_url="$REPO_BASE/$path/$CHOICE.sh"
-    if curl --head --silent --fail "$script_url" > /dev/null; then
-      bash <(curl -sSL "$script_url")
-    else
-      echo "❌ Script não encontrado: $CHOICE"
-    fi
-  fi
-}
-
-# 🚀 Inicia menu na pasta da distribuição
-show_menu "$BASE"
+    if curl
