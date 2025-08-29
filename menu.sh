@@ -2,39 +2,52 @@
 
 DISTRO="$1"
 REPO_BASE="$2"
-BRANCH=$(echo "$REPO_BASE" | cut -d'/' -f6)
-USER=$(echo "$REPO_BASE" | cut -d'/' -f4)
-REPO=$(echo "$REPO_BASE" | cut -d'/' -f5)
+BASE="distros/$DISTRO"
 
-# Função para listar conteúdo de uma pasta no GitHub
-list_github_folder() {
+# 📦 Verifica se o 'dialog' está instalado
+if ! command -v dialog >/dev/null 2>&1; then
+  echo "❌ O utilitário 'dialog' não está instalado."
+  echo "ℹ️ Instale com: sudo apt install dialog  # ou sudo dnf install dialog"
+  exit 1
+fi
+
+# 🔍 Função para listar arquivos e pastas de um caminho no GitHub
+list_github_items() {
   local path="$1"
-  curl -s "https://api.github.com/repos/$USER/$REPO/contents/$path?ref=$BRANCH"
+  local api_url="https://api.github.com/repos/$(echo "$REPO_BASE" | cut -d'/' -f4,5)/contents/$path?ref=$(echo "$REPO_BASE" | cut -d'/' -f6)"
+  curl -fsSL "$api_url"
 }
 
-# Função para montar menu interativo com dialog
+# 📋 Função para montar menu interativo com dialog
 show_menu() {
   local path="$1"
-  local entries=$(list_github_folder "$path")
-
+  local json=$(list_github_items "$path")
   local options=()
-  while IFS= read -r line; do
-    name=$(echo "$line" | jq -r '.name')
-    type=$(echo "$line" | jq -r '.type')
+  local found_items=false
 
-    # Ignora arquivos ocultos ou inválidos
-    [[ "$name" == "null" || -z "$name" ]] && continue
+  while IFS= read -r line; do
+    name=$(echo "$line" | grep '"name":' | cut -d '"' -f4)
+    type=$(echo "$line" | grep '"type":' | cut -d '"' -f4)
+
+    [[ -z "$name" || -z "$type" ]] && continue
 
     if [[ "$type" == "dir" ]]; then
       options+=("$name/" "📁 Pasta")
-    elif [[ "$name" == *.sh && "$name" != *-check.sh ]]; then
+      found_items=true
+    elif [[ "$type" == "file" && "$name" == *.sh && "$name" != *-check.sh ]]; then
       options+=("${name%.sh}" "📦 Script")
+      found_items=true
     fi
-  done <<< "$(echo "$entries" | jq -c '.[]')"
+  done <<< "$(echo "$json" | tr -d '\r')"
 
   options+=("sair" "🚪 Sair")
 
-  # Mostra menu com dialog
+  if [[ "$found_items" == false ]]; then
+    dialog --msgbox "Nenhum script ou pasta encontrado em '$path'." 8 50
+    clear
+    exit 1
+  fi
+
   CHOICE=$(dialog --clear --title "Menu: $path" \
     --menu "Selecione uma opção:" 20 60 15 \
     "${options[@]}" \
@@ -42,7 +55,6 @@ show_menu() {
 
   clear
 
-  # Processa escolha
   if [[ "$CHOICE" == "sair" ]]; then
     echo "🚪 Saindo..."
     exit 0
@@ -58,5 +70,5 @@ show_menu() {
   fi
 }
 
-# Inicia menu na pasta da distribuição
-show_menu "distros/$DISTRO"
+# 🚀 Inicia menu na pasta da distribuição
+show_menu "$BASE"
