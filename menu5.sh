@@ -4,6 +4,23 @@ DISTRO="$1"
 REPO_BASE="$2"
 BASE="$REPO_BASE/distros/$DISTRO"
 
+# Codifica strings para uso seguro em URLs
+urlencode() {
+  local string="$1"
+  local encoded=""
+  local pos c o
+
+  for (( pos=0 ; pos<${#string} ; pos++ )); do
+    c=${string:$pos:1}
+    case "$c" in
+      [-_.~a-zA-Z0-9] ) o="$c" ;;
+      * )               printf -v o '%%%02X' "'$c"
+    esac
+    encoded+="$o"
+  done
+  echo "$encoded"
+}
+
 script_exists() {
   curl --head --silent --fail "$1" > /dev/null
 }
@@ -27,10 +44,22 @@ discover_resources() {
   done <<< "$files"
 }
 
+check_resource() {
+  local RESOURCE="$1"
+  case "$RESOURCE" in
+    hyprland) return 0 ;;
+    docker) command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1 ;;
+    "Teste 04") return 0 ;;
+    "Teste 05") [ -f "/opt/teste04/instalado.flag" ] ;;
+    *) echo "❌ Recurso desconhecido: '$RESOURCE'" >&2; return 1 ;;
+  esac
+}
+
 show_resource_status() {
   local name="$1"
-  local install_script="$REPO_BASE/distros/$DISTRO/${name}.sh"
-  local check_script="$REPO_BASE/distros/$DISTRO/${name}-check.sh"
+  local encoded_name=$(urlencode "$name")
+  local install_script="$REPO_BASE/distros/$DISTRO/${encoded_name}.sh"
+  local check_script="$REPO_BASE/distros/$DISTRO/${encoded_name}-check.sh"
 
   local has_install=false
   local has_check=false
@@ -39,20 +68,23 @@ show_resource_status() {
   script_exists "$check_script" && has_check=true
 
   if [ "$has_install" = false ]; then
-    echo "❌ $name (instalação não disponível)"
+    echo "❌  "
     return
   fi
 
-  if [ "$has_check" = false ]; then
-    echo "⚠️ $name (checagem ausente)"
-    return
-  fi
-
-  local status=$(bash <(curl -sSL "$check_script"))
-  if [[ "$status" == "🟢" ]]; then
-    echo "🟢 $name [checado instalado]"
+  if [ "$has_check" = true ]; then
+    if bash <(curl -sSL "$check_script"); then
+      echo "[x]"
+    else
+      echo "[ ]"
+    fi
   else
-    echo "🟡 $name [checado não instalado]"
+    local check_target=$(basename "$name")
+    if check_resource "$check_target"; then
+      echo "[x]"
+    else
+      echo "[ ]"
+    fi
   fi
 }
 
@@ -62,18 +94,18 @@ if [[ ! -t 1 ]]; then
   exit 1
 fi
 
-while true; do
-  discover_resources
+discover_resources
 
+while true; do
   menu_list=()
   for name in "${resources[@]}"; do
     if [[ -n "$name" ]]; then
       status=$(show_resource_status "$name" | tail -n1)
-      menu_list+=("$name - $status")
+      menu_list+=("$status $name")
     fi
   done
 
-  menu_list+=("Sair - ❌ Encerrar o script")
+  menu_list+=("  - Sair")
 
   selected=$(
     printf "%s\n" "${menu_list[@]}" | fzf \
@@ -83,14 +115,16 @@ while true; do
       --layout=reverse
   )
 
-  opcao=$(echo "$selected" | cut -d' ' -f1)
+  opcao=$(echo "$selected" | sed -E 's/^\s*(\[[x ]\]|❌|-) +//')
 
   if [[ "$opcao" == "Sair" ]]; then
     echo "👋 Saindo..."
     break
   fi
 
-  install_script="$REPO_BASE/distros/$DISTRO/${opcao}.sh"
+  encoded_name=$(urlencode "$opcao")
+  install_script="$REPO_BASE/distros/$DISTRO/${encoded_name}.sh"
+
   if script_exists "$install_script"; then
     echo ""
     echo "🔧 Instalando $opcao..."
