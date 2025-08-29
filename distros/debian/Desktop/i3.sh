@@ -26,11 +26,11 @@ packages=(
   gtk2-engines-murrine
   gnome-themes-extra
   network-manager-gnome
-  xclip           # clipboard
-  xfce4-power-manager
-  suckless-tools
-  xdg-desktop-portal
-  xdg-desktop-portal-gtk
+  xclip           # considerar instalar se quiser manipular clipboard no terminal considerar também o `parcellite` ou `clipit` para um clipboard mais avançado
+  xfce4-power-manager # power manager - talvez não funcione no I3
+  suckless-tools  # dmenu, slock tela de lock
+  xdg-desktop-portal # para integrações dos flatpaks
+  xdg-desktop-portal-gtk # para integrações dos flatpaks
 )
 
 sudo apt install -y "${packages[@]}"
