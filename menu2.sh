@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DISTRO="debian"  # ou detecte automaticamente com `lsb_release -is`
+DISTRO="debian"
 BASE_DIR="distros/$DISTRO"
 CURRENT_PATH=""
 
@@ -12,12 +12,12 @@ show_menu() {
 
     local full_path="$BASE_DIR/$CURRENT_PATH"
 
-    # Listar subpastas
-    for dir in "$full_path"/*/; do
+    # Mostrar apenas subpastas (sem scripts dentro delas)
+    for dir in "$full_path"/*; do
         [ -d "$dir" ] && echo "$(basename "$dir")/"
     done
 
-    # Listar scripts .sh
+    # Mostrar apenas scripts .sh diretamente na pasta atual
     for file in "$full_path"/*.sh; do
         [ -f "$file" ] && echo "$(basename "$file" .sh)"
     done
@@ -35,10 +35,10 @@ read_choice() {
 
     local full_path="$BASE_DIR/$CURRENT_PATH"
 
-    if [ "$choice" == "❌" ] || [ "$choice" == "sair" ]; then
+    if [[ "$choice" == "❌" || "$choice" == "sair" ]]; then
         echo "Saindo..."
         exit 0
-    elif [ "$choice" == "⬅️" ] || [ "$choice" == "voltar" ]; then
+    elif [[ "$choice" == "⬅️" || "$choice" == "voltar" ]]; then
         CURRENT_PATH="$(dirname "$CURRENT_PATH")"
         [ "$CURRENT_PATH" == "." ] && CURRENT_PATH=""
     elif [ -d "$full_path/$choice" ]; then
