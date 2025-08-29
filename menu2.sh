@@ -22,8 +22,8 @@ discover_resources() {
   local index_url="https://api.github.com/repos/$user/$repo/contents/$path?ref=$branch"
   local response=$(curl -s "$index_url")
 
-  # Processa cada item mantendo nome e tipo juntos
-  echo "$response" | tr -d '\r' | awk '
+  # Processa o JSON mantendo nome e tipo juntos
+  echo "$response" | awk '
     /"name":/ { name = $2; gsub(/"|,/, "", name) }
     /"type":/ {
       type = $2; gsub(/"|,/, "", type)
