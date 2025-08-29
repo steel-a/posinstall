@@ -6,6 +6,13 @@ BASE="$REPO_BASE/distros/$DISTRO"
 CHECKS_SCRIPT_URL="$REPO_BASE/checks.sh"
 CHECKS_SCRIPT_PATH="/tmp/shared-checks.sh"
 
+download_checks_script_fresh() {
+  echo "⬇️  Baixando checks.sh compartilhado..."
+  curl -sSL "$CHECKS_SCRIPT_URL" -o "$CHECKS_SCRIPT_PATH"
+  chmod +x "$CHECKS_SCRIPT_PATH"
+}
+download_checks_script_fresh
+
 # Codifica strings para uso seguro em URLs
 urlencode() {
   local string="$1"
