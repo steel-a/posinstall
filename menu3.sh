@@ -20,21 +20,23 @@ discover_resources() {
         local url="$1"
         local path="$2"
         local response=$(curl -s "$url")
-
-        while IFS= read -r line; do
-            if echo "$line" | grep -q '"type": "dir"'; then
-                local subdir=$(echo "$line" | grep '"name":' | head -n1 | cut -d '"' -f4)
-                local suburl="https://api.github.com/repos/$user/$repo/contents/$path/$subdir?ref=$branch"
-                fetch_scripts_recursively "$suburl" "$path/$subdir"
-            elif echo "$line" | grep -q '"type": "file"'; then
-                local filename=$(echo "$line" | grep '"name":' | head -n1 | cut -d '"' -f4)
-                if [[ "$filename" == *.sh && "$filename" != *-check.sh ]]; then
-                    local name="${path}/${filename%.sh}"
-                    [[ -n "$name" ]] && resources+=("$name")
-                fi
+    
+        # Extrai blocos de arquivos e diretórios
+        echo "$response" | tr -d '\n' | sed 's/},{/}\n{/g' | while read -r item; do
+            local type=$(echo "$item" | grep -o '"type":"[^"]*"' | cut -d'"' -f4)
+            local name=$(echo "$item" | grep -o '"name":"[^"]*"' | cut -d'"' -f4)
+            local full_path="$path/$name"
+    
+            if [[ "$type" == "dir" ]]; then
+                local suburl="https://api.github.com/repos/$user/$repo/contents/$full_path?ref=$branch"
+                fetch_scripts_recursively "$suburl" "$full_path"
+            elif [[ "$type" == "file" && "$name" == *.sh && "$name" != *-check.sh ]]; then
+                local script_name="${full_path%.sh}"
+                resources+=("$script_name")
             fi
-        done <<< "$(echo "$response" | tr -d '\r')"
+        done
     }
+
 
     fetch_scripts_recursively "$api_url" "distros/$DISTRO"
 }
