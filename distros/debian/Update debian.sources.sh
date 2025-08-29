@@ -28,7 +28,7 @@ for file in "$SOURCE_DIR"/*.sources; do
             for comp in "${REQUIRED_COMPONENTS[@]}"; do
                 if [[ ! " ${current_components[@]} " =~ " $comp " ]]; then
                     echo "➕ Adicionando '$comp' ao arquivo $file"
-                    sed -i "/^Components:/ s/$/ $comp/" "$file"
+                    sudo sed -i "/^Components:/ s/$/ $comp/" "$file"
                 fi
             done
         fi
