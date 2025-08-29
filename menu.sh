@@ -4,15 +4,12 @@ DISTRO="$1"
 REPO_BASE="$2"
 BASE="$REPO_BASE/distros/$DISTRO"
 
-# Lista de recursos detectados
 resources=()
 
-# Função para verificar se um script existe
 script_exists() {
   curl --head --silent --fail "$1" > /dev/null
 }
 
-# Função para extrair nomes de recursos válidos
 discover_resources() {
   local user=$(echo "$REPO_BASE" | cut -d'/' -f4)
   local repo=$(echo "$REPO_BASE" | cut -d'/' -f5)
@@ -22,7 +19,7 @@ discover_resources() {
   local files=$(curl -s "$index_url" | grep '"name":' | cut -d '"' -f4)
 
   while IFS= read -r file; do
-    file=$(echo "$file" | tr -d '\r')  # remove caracteres invisíveis
+    file=$(echo "$file" | tr -d '\r')
     if [[ "$file" == *.sh && "$file" != *-check.sh ]]; then
       local name="${file%.sh}"
       if [[ -n "$name" ]]; then
@@ -32,10 +29,6 @@ discover_resources() {
   done <<< "$files"
 }
 
-
-
-
-# Função para exibir status de cada recurso
 show_resource_status() {
   local name="$1"
   local install_script="$BASE/${name}.sh"
@@ -65,26 +58,32 @@ show_resource_status() {
   fi
 }
 
-
-# Descobre recursos
 discover_resources
 
-# Exibe menu
 echo ""
 echo "🔧 Menu de Pós-Instalação para $DISTRO"
+echo "Use as setas para navegar e Enter para selecionar:"
+echo ""
+
+# Gera lista com status para exibir no fzf
+menu_list=()
 for name in "${resources[@]}"; do
   if [[ -n "$name" ]]; then
-    show_resource_status "$name"
+    status=$(show_resource_status "$name" | tail -n1)
+    menu_list+=("$name - $status")
   fi
 done
 
-echo ""
+# Usa fzf para selecionar
+selected=$(printf "%s\n" "${menu_list[@]}" | fzf --prompt="Selecione o recurso: " --height=20 --border)
 
-# Lê escolha
-read -p "Escolha uma opção para instalar: " opcao
+# Extrai nome do recurso selecionado
+opcao=$(echo "$selected" | cut -d' ' -f1)
 
 install_script="$BASE/${opcao}.sh"
 if script_exists "$install_script"; then
+  echo ""
+  echo "🔧 Instalando $opcao..."
   bash <(curl -sSL "$install_script")
 else
   echo "❌ Opção inválida ou script não disponível."
