@@ -91,7 +91,7 @@ while true; do
     fi
   done
 
-  menu_list+=("    Sair")
+  menu_list+=("  - Sair")
 
   selected=$(
     printf "%s\n" "${menu_list[@]}" | fzf \
