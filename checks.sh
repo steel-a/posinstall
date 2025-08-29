@@ -18,6 +18,9 @@ case "$RESOURCE" in
     command -v dmenu >/dev/null 2>&1 &&
     command -v slock >/dev/null 2>&1
     ;;
+  "Update sources.list")
+    grep -E '^deb ' /etc/apt/sources.list | grep -qE 'main.*contrib.*non-free.*non-free-firmware'
+    ;;    
   hyprland) exit 0 ;;
   docker) command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1 ;;
   "Teste 04") exit 0 ;;
