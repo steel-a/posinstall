@@ -64,11 +64,6 @@ fi
 while true; do
   discover_resources
 
-  echo ""
-  echo "🔧 Menu de Pós-Instalação para $DISTRO"
-  echo "Use as setas para navegar e Enter para selecionar:"
-  echo ""
-
   menu_list=()
   for name in "${resources[@]}"; do
     if [[ -n "$name" ]]; then
@@ -79,7 +74,12 @@ while true; do
 
   menu_list+=("Sair - ❌ Encerrar o script")
 
-  selected=$(printf "%s\n" "${menu_list[@]}" | fzf --prompt="Selecione o recurso: " --height=80% --border --layout=reverse)
+  selected=$(printf "%s\n" "${menu_list[@]}" | fzf \
+  --prompt="Selecione o recurso: " \
+  --height=100% \
+  --border \
+  --layout=reverse \
+  --header="🔧 Menu de Pós-Instalação para $DISTRO\nUse as setas para navegar e Enter para selecionar:")
 
   opcao=$(echo "$selected" | cut -d' ' -f1)
 
