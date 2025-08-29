@@ -2,67 +2,90 @@
 
 DISTRO="$1"
 REPO_BASE="$2"
-BASE="distros/$DISTRO"
+BASE="$REPO_BASE/distros/$DISTRO"
 
-# 📦 Verifica se o 'dialog' está instalado
-if ! command -v dialog >/dev/null 2>&1; then
-  echo "❌ O utilitário 'dialog' não está instalado."
-  echo "ℹ️ Instale com: sudo apt install dialog  # ou sudo dnf install dialog"
-  exit 1
-fi
+# Lista de recursos detectados
+resources=()
 
-# 🔍 Função para listar arquivos e pastas de um caminho no GitHub
-list_github_items() {
-  local path="$1"
-  local api_url="https://api.github.com/repos/$(echo "$REPO_BASE" | cut -d'/' -f4,5)/contents/$path?ref=$(echo "$REPO_BASE" | cut -d'/' -f6)"
-  curl -fsSL "$api_url"
+# Função para verificar se um script existe
+script_exists() {
+  curl --head --silent --fail "$1" > /dev/null
 }
 
-# 📋 Função para montar menu interativo com dialog
-show_menu() {
-  local path="$1"
-  local json=$(list_github_items "$path")
-  local options=()
-  local found_items=false
+# Função para extrair nomes de recursos válidos
+discover_resources() {
+  local user=$(echo "$REPO_BASE" | cut -d'/' -f4)
+  local repo=$(echo "$REPO_BASE" | cut -d'/' -f5)
+  local branch=$(echo "$REPO_BASE" | cut -d'/' -f6)
 
-  # Divide o JSON em blocos por item
-  IFS=$'\n'
-  for block in $(echo "$json" | tr -d '\r' | awk '/^{/{f=1}f; /}/{f=0}' | sed 's/,$//'); do
-    name=$(echo "$block" | grep '"name":' | head -n1 | cut -d '"' -f4)
-    type=$(echo "$block" | grep '"type":' | head -n1 | cut -d '"' -f4)
+  local index_url="https://api.github.com/repos/$user/$repo/contents/distros/$DISTRO?ref=$branch"
+  local files=$(curl -s "$index_url" | grep '"name":' | cut -d '"' -f4)
 
-    [[ -z "$name" || -z "$type" ]] && continue
-
-    if [[ "$type" == "dir" ]]; then
-      options+=("$name/" "📁 Pasta")
-      found_items=true
-    elif [[ "$type" == "file" && "$name" == *.sh && "$name" != *-check.sh ]]; then
-      options+=("${name%.sh}" "📦 Script")
-      found_items=true
+  while IFS= read -r file; do
+    file=$(echo "$file" | tr -d '\r')  # remove caracteres invisíveis
+    if [[ "$file" == *.sh && "$file" != *-check.sh ]]; then
+      local name="${file%.sh}"
+      if [[ -n "$name" ]]; then
+        resources+=("$name")
+      fi
     fi
-  done
-  unset IFS
+  done <<< "$files"
+}
 
-  options+=("sair" "🚪 Sair")
 
-  if [[ "$found_items" == false ]]; then
-    dialog --msgbox "Nenhum script ou pasta encontrado em '$path'." 8 50
-    clear
-    exit 1
+
+
+# Função para exibir status de cada recurso
+show_resource_status() {
+  local name="$1"
+  local install_script="$BASE/${name}.sh"
+  local check_script="$BASE/${name}-check.sh"
+
+  local has_install=false
+  local has_check=false
+
+  script_exists "$install_script" && has_install=true
+  script_exists "$check_script" && has_check=true
+
+  if [ "$has_install" = false ]; then
+    echo "❌ $name (instalação não disponível)"
+    return
   fi
 
-  CHOICE=$(dialog --clear --title "Menu: $path" \
-    --menu "Selecione uma opção:" 20 60 15 \
-    "${options[@]}" \
-    3>&1 1>&2 2>&3)
+  if [ "$has_check" = false ]; then
+    echo "⚠️ $name (checagem ausente)"
+    return
+  fi
 
-  clear
-
-  if [[ "$CHOICE" == "sair" ]]; then
-    echo "🚪 Saindo..."
-    exit 0
-  elif [[ "$CHOICE" == */ ]]; then
-    show_menu "$path/${CHOICE%/}"
+  local status=$(bash <(curl -sSL "$check_script"))
+  if [[ "$status" == "🟢" ]]; then
+    echo "🟢 $name [checado instalado]"
   else
-    local script_url="$REPO_BASE/$path/$CHOICE.sh"
-    if curl
+    echo "🟡 $name [checado não instalado]"
+  fi
+}
+
+
+# Descobre recursos
+discover_resources
+
+# Exibe menu
+echo ""
+echo "🔧 Menu de Pós-Instalação para $DISTRO"
+for name in "${resources[@]}"; do
+  if [[ -n "$name" ]]; then
+    show_resource_status "$name"
+  fi
+done
+
+echo ""
+
+# Lê escolha
+read -p "Escolha uma opção para instalar: " opcao
+
+install_script="$BASE/${opcao}.sh"
+if script_exists "$install_script"; then
+  bash <(curl -sSL "$install_script")
+else
+  echo "❌ Opção inválida ou script não disponível."
+fi
