@@ -115,11 +115,7 @@ while true; do
       --layout=reverse
   )
 
-  opcao=$(echo "$selected" | sed -E 's/^\s*(
-
-\[[x ]\]
-
-|❌|-) +//')
+  opcao=$(echo "$selected" | sed -E 's/^\s*(\[[x ]\]|❌|-) +//')
 
   if [[ "$opcao" == "Sair" ]]; then
     echo "👋 Saindo..."
