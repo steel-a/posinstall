@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DISTRO="debian"  # ou detecte automaticamente com `lsb_release -is`
+DISTRO="ubuntu"  # ou detecte automaticamente com `lsb_release -is`
 BASE_DIR="distros/$DISTRO"
 CURRENT_PATH=""
 
