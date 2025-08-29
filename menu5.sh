@@ -22,25 +22,23 @@ discover_resources() {
   local index_url="https://api.github.com/repos/$user/$repo/contents/$path?ref=$branch"
   local response=$(curl -s "$index_url")
 
-  # Processa cada item mantendo nome e tipo juntos
-  echo "$response" | tr -d '\r' | awk '
-    /"name":/ { name = $2; gsub(/"|,/, "", name) }
-    /"type":/ {
-      type = $2; gsub(/"|,/, "", type)
-      if (type == "dir") {
-        print "DIR:" name
-      } else if (type == "file" && name ~ /\.sh$/ && name !~ /-check\.sh$/) {
-        sub(/\.sh$/, "", name)
-        print "SH:" name
-      }
-    }
-  ' | while read -r entry; do
-    if [[ "$entry" == DIR:* ]]; then
-      folders+=("${entry#DIR:}")
-    elif [[ "$entry" == SH:* ]]; then
-      resources+=("${entry#SH:}")
+  # Processa o JSON mantendo pares nome/tipo
+  local name=""
+  local type=""
+  while IFS= read -r line; do
+    if echo "$line" | grep -q '"name":'; then
+      name=$(echo "$line" | cut -d'"' -f4)
+    elif echo "$line" | grep -q '"type":'; then
+      type=$(echo "$line" | cut -d'"' -f4)
+      if [[ "$type" == "dir" ]]; then
+        folders+=("$name")
+      elif [[ "$type" == "file" && "$name" == *.sh && "$name" != *-check.sh ]]; then
+        resources+=("${name%.sh}")
+      fi
+      name=""
+      type=""
     fi
-  done
+  done <<< "$response"
 }
 
 show_resource_status() {
