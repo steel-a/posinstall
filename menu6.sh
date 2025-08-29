@@ -66,12 +66,12 @@ show_resource_status() {
     return
   fi
 
-  local status=$(bash <(curl -sSL "$check_script"))
-  if [[ "$status" == "🟢" ]]; then
+  if bash <(curl -sSL "$check_script"); then
     echo "🟢 $name [checado instalado]"
   else
     echo "🟡 $name [checado não instalado]"
   fi
+
 }
 
 # Verifica se o terminal é interativo
