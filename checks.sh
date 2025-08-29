@@ -26,7 +26,28 @@ case "$RESOURCE" in
     done
   done
   ;;
-  hyprland) exit 0 ;;
+  
+hyprland)
+  command -v hyprland >/dev/null 2>&1 &&
+  command -v brightnessctl >/dev/null 2>&1 &&
+  command -v notify-send >/dev/null 2>&1 &&
+  command -v waybar >/dev/null 2>&1 &&
+  command -v wofi >/dev/null 2>&1 &&
+  command -v mako >/dev/null 2>&1 &&
+  command -v swaybg >/dev/null 2>&1 &&
+  command -v grim >/dev/null 2>&1 &&
+  command -v slurp >/dev/null 2>&1 &&
+  command -v lxappearance >/dev/null 2>&1 &&
+  command -v nm-connection-editor >/dev/null 2>&1 &&
+  command -v wl-copy >/dev/null 2>&1 &&
+  command -v swayidle >/dev/null 2>&1 &&
+  command -v swaylock >/dev/null 2>&1 &&
+  dpkg -s power-profiles-daemon >/dev/null 2>&1 &&
+  dpkg -s xdg-desktop-portal >/dev/null 2>&1 &&
+  dpkg -s xdg-desktop-portal-hyprland >/dev/null 2>&1 &&
+  dpkg -s xdg-desktop-portal-wlr >/dev/null 2>&1
+  ;;
+
   docker) command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1 ;;
   "Teste 04") exit 0 ;;
   "Teste 05") [ -f "/opt/teste04/instalado.flag" ] ;;
