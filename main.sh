@@ -1,10 +1,20 @@
 #!/bin/bash
 
 REPO_BASE="https://raw.githubusercontent.com/steel-a/posinstall/main"
+DEPENDENCIAS=(bash curl fzf grep cut tr sed printf)
 
-# 📦 Verifica se o 'dialog' está instalado
-if ! command -v dialog >/dev/null 2>&1; then
-  echo "❌ O utilitário 'dialog' não está instalado."
+faltando=()
+for cmd in "${DEPENDENCIAS[@]}"; do
+  if ! command -v "$cmd" &> /dev/null; then
+    faltando+=("$cmd")
+  fi
+done
+
+if [ ${#faltando[@]} -gt 0 ]; then
+  echo "❌ Dependências ausentes:"
+  for cmd in "${faltando[@]}"; do
+    echo "   - $cmd"
+  done
   exit 1
 fi
 
