@@ -74,15 +74,14 @@ while true; do
 
   menu_list+=("Sair - ❌ Encerrar o script")
 
-selected=$(printf "%s\n" "${menu_list[@]}" | fzf \
-  --prompt="Selecione o recurso: " \
-  --height=100% \
-  --border \
-  --layout=reverse)
+  selected=$(printf "%s\n" "${menu_list[@]}" | fzf \
+    --prompt="🔧 Pós-Instalação para $DISTRO. Use as setas para navegar e Enter para selecionar:" \
+    --height=100% \
+    --border \
+    --layout=reverse)
 
-
-  
   opcao=$(echo "$selected" | cut -d' ' -f1)
+
 
   if [[ "$opcao" == "Sair" ]]; then
     echo "👋 Saindo..."
