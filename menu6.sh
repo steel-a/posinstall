@@ -57,12 +57,12 @@ show_resource_status() {
   script_exists "$check_script" && has_check=true
 
   if [ "$has_install" = false ]; then
-    echo "❌" # Erro no script
+    echo "❌  " # Erro no script
     return
   fi
 
   if [ "$has_check" = false ]; then
-    echo "⚠️" # Checagem ausente
+    echo "  -" # Checagem ausente
     return
   fi
 
@@ -91,7 +91,7 @@ while true; do
     fi
   done
 
-  menu_list+=("Sair - ❌ Encerrar o script")
+  menu_list+=("❌  Sair")
 
   selected=$(
     printf "%s\n" "${menu_list[@]}" | fzf \
