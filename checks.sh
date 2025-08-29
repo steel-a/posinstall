@@ -27,7 +27,7 @@ case "$RESOURCE" in
   done
   ;;
   
-hyprland)
+Hyprland)
   command -v hyprland >/dev/null 2>&1 &&
   command -v brightnessctl >/dev/null 2>&1 &&
   command -v notify-send >/dev/null 2>&1 &&
@@ -47,7 +47,7 @@ hyprland)
   dpkg -s xdg-desktop-portal-hyprland >/dev/null 2>&1 &&
   dpkg -s xdg-desktop-portal-wlr >/dev/null 2>&1
   ;;
-audio-desktop)
+Audio-Desktop)
   command -v pavucontrol >/dev/null 2>&1 &&
   command -v pulsemixer >/dev/null 2>&1 &&
   command -v pamixer >/dev/null 2>&1 &&
