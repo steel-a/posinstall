@@ -15,20 +15,28 @@ sudo apt install -y \
   sxhkd \
   xdotool \
   picom \
-  xbacklight \  # controle de brilho
+  # controle de brilho
+  xbacklight \
   libnotify-bin \
   polybar \
   rofi \
-  dunst \        # barra, lançador, notificações
-  feh \          # background
-  flameshot \    # print screen
+  # barra, lançador, notificações
+  dunst \        
+  # background
+  feh \          
+  # print screen
+  flameshot \    
   lxappearance \
   gtk2-engines-murrine \
-  gnome-themes-extra \  # integração com GTK
+  # integração com GTK
+  gnome-themes-extra \  
   network-manager-gnome \
-  xclip \        # clipboard no terminal
-  xfce4-power-manager \  # gerenciador de energia (pode não funcionar 100% no i3)
-  suckless-tools \       # inclui dmenu, slock
+  # clipboard no terminal
+  xclip \        
+  # gerenciador de energia (pode não funcionar 100% no i3)
+  xfce4-power-manager \  
+  # inclui dmenu, slock
+  suckless-tools \       
   xdg-desktop-portal \
   xdg-desktop-portal-gtk
 
