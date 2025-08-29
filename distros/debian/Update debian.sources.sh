@@ -2,8 +2,6 @@
 
 sudo apt modernize-sources -y
 
-#!/bin/bash
-
 # Componentes obrigatórios
 REQUIRED_COMPONENTS=("main" "contrib" "non-free" "non-free-firmware")
 
@@ -17,20 +15,29 @@ for file in "$SOURCE_DIR"/*.sources; do
     # Cria backup antes de modificar
     sudo cp "$file" "$file.bak"
 
-    # Extrai linhas de Components
+    # Para cada linha que começa com Components:
     while IFS= read -r line; do
         if [[ "$line" =~ ^Components: ]]; then
+            # Extrai os componentes atuais
             current_components=($line)
-            # Remove "Components:" da primeira posição
-            unset current_components[0]
+            unset current_components[0]  # Remove "Components:"
 
-            # Verifica e adiciona componentes faltantes
+            # Monta nova linha com componentes faltantes
+            new_line="Components:"
             for comp in "${REQUIRED_COMPONENTS[@]}"; do
-                if [[ ! " ${current_components[@]} " =~ " $comp " ]]; then
-                    echo "➕ Adicionando '$comp' ao arquivo $file"
-                    sudo sed -i "/^Components:/ s/$/ $comp/" "$file"
+                if [[ " ${current_components[@]} " =~ " $comp " ]]; then
+                    new_line+=" $comp"
+                else
+                    echo "➕ Adicionando '$comp' ao linha de $file"
+                    new_line+=" $comp"
                 fi
             done
+
+            # Escapa a linha original para uso no sed
+            escaped_line=$(echo "$line" | sed 's/[&/\]/\\&/g')
+
+            # Substitui a linha no arquivo
+            sudo sed -i "s/^$escaped_line\$/$new_line/" "$file"
         fi
     done < "$file"
 done
