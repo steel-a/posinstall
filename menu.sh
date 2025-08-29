@@ -4,13 +4,12 @@ DISTRO="$1"
 REPO_BASE="$2"
 BASE="$REPO_BASE/distros/$DISTRO"
 
-resources=()
-
 script_exists() {
   curl --head --silent --fail "$1" > /dev/null
 }
 
 discover_resources() {
+  resources=()
   local user=$(echo "$REPO_BASE" | cut -d'/' -f4)
   local repo=$(echo "$REPO_BASE" | cut -d'/' -f5)
   local branch=$(echo "$REPO_BASE" | cut -d'/' -f6)
@@ -22,9 +21,7 @@ discover_resources() {
     file=$(echo "$file" | tr -d '\r')
     if [[ "$file" == *.sh && "$file" != *-check.sh ]]; then
       local name="${file%.sh}"
-      if [[ -n "$name" ]]; then
-        resources+=("$name")
-      fi
+      [[ -n "$name" ]] && resources+=("$name")
     fi
   done <<< "$files"
 }
@@ -58,33 +55,44 @@ show_resource_status() {
   fi
 }
 
-discover_resources
+while true; do
+  discover_resources
 
-echo ""
-echo "🔧 Menu de Pós-Instalação para $DISTRO"
-echo "Use as setas para navegar e Enter para selecionar:"
-echo ""
-
-# Gera lista com status para exibir no fzf
-menu_list=()
-for name in "${resources[@]}"; do
-  if [[ -n "$name" ]]; then
-    status=$(show_resource_status "$name" | tail -n1)
-    menu_list+=("$name - $status")
-  fi
-done
-
-# Usa fzf para selecionar
-selected=$(printf "%s\n" "${menu_list[@]}" | fzf --prompt="Selecione o recurso: " --height=20 --border)
-
-# Extrai nome do recurso selecionado
-opcao=$(echo "$selected" | cut -d' ' -f1)
-
-install_script="$BASE/${opcao}.sh"
-if script_exists "$install_script"; then
   echo ""
-  echo "🔧 Instalando $opcao..."
-  bash <(curl -sSL "$install_script")
-else
-  echo "❌ Opção inválida ou script não disponível."
-fi
+  echo "🔧 Menu de Pós-Instalação para $DISTRO"
+  echo "Use as setas para navegar e Enter para selecionar:"
+  echo ""
+
+  menu_list=()
+  for name in "${resources[@]}"; do
+    if [[ -n "$name" ]]; then
+      status=$(show_resource_status "$name" | tail -n1)
+      menu_list+=("$name - $status")
+    fi
+  done
+
+  menu_list+=("Sair - ❌ Encerrar o script")
+
+  height=$(( ${#menu_list[@]} + 2 ))
+  selected=$(printf "%s\n" "${menu_list[@]}" | fzf --prompt="Selecione o recurso: " --height=${height} --border --layout=reverse)
+
+  opcao=$(echo "$selected" | cut -d' ' -f1)
+
+  if [[ "$opcao" == "Sair" ]]; then
+    echo "👋 Saindo..."
+    break
+  fi
+
+  install_script="$BASE/${opcao}.sh"
+  if script_exists "$install_script"; then
+    echo ""
+    echo "🔧 Instalando $opcao..."
+    bash <(curl -sSL "$install_script")
+  else
+    echo "❌ Opção inválida ou script não disponível."
+  fi
+
+  echo ""
+  read -n 1 -s -r -p "Pressione qualquer tecla para voltar ao menu..."
+  clear
+done
