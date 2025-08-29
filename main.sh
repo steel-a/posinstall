@@ -2,6 +2,12 @@
 
 REPO_BASE="https://raw.githubusercontent.com/steel-a/posinstall/main"
 
+# 📦 Verifica se o 'dialog' está instalado
+if ! command -v dialog >/dev/null 2>&1; then
+  echo "❌ O utilitário 'dialog' não está instalado."
+  exit 1
+fi
+
 # ❌ Verifica se está sendo executado como root
 if [ "$EUID" -eq 0 ]; then
   echo "⚠️ Este script deve ser executado como usuário comum, não como root."
