@@ -57,19 +57,19 @@ show_resource_status() {
   script_exists "$check_script" && has_check=true
 
   if [ "$has_install" = false ]; then
-    echo "❌ $name (instalação não disponível)"
+    echo "❌" # Erro no script
     return
   fi
 
   if [ "$has_check" = false ]; then
-    echo "⚠️ $name (checagem ausente)"
+    echo "⚠️" # Checagem ausente
     return
   fi
 
   if bash <(curl -sSL "$check_script"); then
-    echo "🟢 $name [checado instalado]"
+    echo "[x]" # Checado e instalado
   else
-    echo "🟡 $name [checado não instalado]"
+    echo "[ ]" # Checado e não instalado
   fi
 
 }
@@ -87,7 +87,7 @@ while true; do
   for name in "${resources[@]}"; do
     if [[ -n "$name" ]]; then
       status=$(show_resource_status "$name" | tail -n1)
-      menu_list+=("$name - $status")
+      menu_list+=("$status $name")
     fi
   done
 
