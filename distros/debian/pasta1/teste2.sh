@@ -1,1 +1,1 @@
-echo oi
+sudo apt update && sudo apt upgrade -y
