@@ -94,9 +94,9 @@ if [[ ! -t 1 ]]; then
   exit 1
 fi
 
-while true; do
-  discover_resources
+discover_resources
 
+while true; do
   menu_list=()
   for name in "${resources[@]}"; do
     if [[ -n "$name" ]]; then
