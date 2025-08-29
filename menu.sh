@@ -4,6 +4,23 @@ DISTRO="$1"
 REPO_BASE="$2"
 BASE="$REPO_BASE/distros/$DISTRO"
 
+# Codifica strings para uso seguro em URLs
+urlencode() {
+  local string="$1"
+  local encoded=""
+  local pos c o
+
+  for (( pos=0 ; pos<${#string} ; pos++ )); do
+    c=${string:$pos:1}
+    case "$c" in
+      [-_.~a-zA-Z0-9] ) o="$c" ;;
+      * )               printf -v o '%%%02X' "'$c"
+    esac
+    encoded+="$o"
+  done
+  echo "$encoded"
+}
+
 script_exists() {
   curl --head --silent --fail "$1" > /dev/null
 }
@@ -14,13 +31,14 @@ discover_resources() {
   local repo=$(echo "$REPO_BASE" | cut -d'/' -f5)
   local branch=$(echo "$REPO_BASE" | cut -d'/' -f6)
 
-  local index_url="https://api.github.com/repos/$user/$repo/contents/distros/$DISTRO?ref=$branch"
-  local files=$(curl -s "$index_url" | grep '"name":' | cut -d '"' -f4)
+  local tree_url="https://api.github.com/repos/$user/$repo/git/trees/$branch?recursive=1"
+  local files=$(curl -s "$tree_url" | grep '"path":' | cut -d '"' -f4)
 
-  while IFS= read -r file; do
-    file=$(echo "$file" | tr -d '\r')
-    if [[ "$file" == *.sh && "$file" != *-check.sh ]]; then
-      local name="${file%.sh}"
+  while IFS= read -r path; do
+    path=$(echo "$path" | tr -d '\r')
+    if [[ "$path" == distros/$DISTRO/* && "$path" == *.sh && "$path" != *-check.sh ]]; then
+      local relative="${path#distros/$DISTRO/}"
+      local name="${relative%.sh}"
       [[ -n "$name" ]] && resources+=("$name")
     fi
   done <<< "$files"
@@ -28,8 +46,9 @@ discover_resources() {
 
 show_resource_status() {
   local name="$1"
-  local install_script="$BASE/${name}.sh"
-  local check_script="$BASE/${name}-check.sh"
+  local encoded_name=$(urlencode "$name")
+  local install_script="$REPO_BASE/distros/$DISTRO/${encoded_name}.sh"
+  local check_script="$REPO_BASE/distros/$DISTRO/${encoded_name}-check.sh"
 
   local has_install=false
   local has_check=false
@@ -38,21 +57,21 @@ show_resource_status() {
   script_exists "$check_script" && has_check=true
 
   if [ "$has_install" = false ]; then
-    echo "❌ $name (instalação não disponível)"
+    echo "❌  " # Erro no script
     return
   fi
 
   if [ "$has_check" = false ]; then
-    echo "⚠️ $name (checagem ausente)"
+    echo "  -" # Checagem ausente
     return
   fi
 
-  local status=$(bash <(curl -sSL "$check_script"))
-  if [[ "$status" == "🟢" ]]; then
-    echo "🟢 $name [checado instalado]"
+  if bash <(curl -sSL "$check_script"); then
+    echo "[x]" # Checado e instalado
   else
-    echo "🟡 $name [checado não instalado]"
+    echo "[ ]" # Checado e não instalado
   fi
+
 }
 
 # Verifica se o terminal é interativo
@@ -68,11 +87,11 @@ while true; do
   for name in "${resources[@]}"; do
     if [[ -n "$name" ]]; then
       status=$(show_resource_status "$name" | tail -n1)
-      menu_list+=("$name - $status")
+      menu_list+=("$status $name")
     fi
   done
 
-  menu_list+=("Sair - ❌ Encerrar o script")
+  menu_list+=("❌  Sair")
 
   selected=$(
     printf "%s\n" "${menu_list[@]}" | fzf \
@@ -82,14 +101,18 @@ while true; do
       --layout=reverse
   )
 
-  opcao=$(echo "$selected" | cut -d' ' -f1)
+
+  opcao=$(echo "$selected" | sed -E 's/^\s*(\[[x ]\]|❌|-) +//')
+  
 
   if [[ "$opcao" == "Sair" ]]; then
     echo "👋 Saindo..."
     break
   fi
 
-  install_script="$BASE/${opcao}.sh"
+  encoded_name=$(urlencode "$opcao")
+  install_script="$REPO_BASE/distros/$DISTRO/${encoded_name}.sh"
+
   if script_exists "$install_script"; then
     echo ""
     echo "🔧 Instalando $opcao..."
