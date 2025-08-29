@@ -42,4 +42,5 @@ for file in "$SOURCE_DIR"/*.sources; do
     done < "$file"
 done
 
+sudo apt update && sudo apt upgrade -y
 echo "✅ Verificação concluída. Backups criados com extensão .bak"
