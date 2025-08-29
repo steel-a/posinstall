@@ -1,41 +1,38 @@
 #!/bin/bash
 
-set -e
-
-echo "🔍 Verificando componentes do sources.list..."
-
-FILE="/etc/apt/sources.list"
-TEMP="/tmp/sources.list.tmp"
-
-# Faz backup antes de modificar
-sudo cp "$FILE" "${FILE}.bak"
-
-# Função para verificar e ajustar cada linha
-adjust_line() {
-  local line="$1"
-  if [[ "$line" =~ ^deb ]]; then
-    # Verifica se já contém os componentes
-    if ! echo "$line" | grep -qE 'main.*contrib.*non-free.*non-free-firmware'; then
-      # Adiciona os componentes ausentes
-      echo "$line" | sed -E 's/main.*/main contrib non-free non-free-firmware/' >> "$TEMP"
-    else
-      echo "$line" >> "$TEMP"
-    fi
-  else
-    echo "$line" >> "$TEMP"
-  fi
-}
-
-# Processa linha por linha
-> "$TEMP"
-while IFS= read -r line; do
-  adjust_line "$line"
-done < "$FILE"
-
-# Substitui o sources.list
-sudo mv "$TEMP" "$FILE"
-
-echo "✅ sources.list ajustado com sucesso!"
-echo "🔄 Atualizando lista de pacotes..."
-sudo apt update
 sudo apt modernize-sources -y
+
+#!/bin/bash
+
+# Componentes obrigatórios
+REQUIRED_COMPONENTS=("main" "contrib" "non-free" "non-free-firmware")
+
+# Diretório dos sources modernos
+SOURCE_DIR="/etc/apt/sources.list.d"
+
+# Processa todos os arquivos .sources
+for file in "$SOURCE_DIR"/*.sources; do
+    echo "🔍 Verificando: $file"
+
+    # Cria backup antes de modificar
+    cp "$file" "$file.bak"
+
+    # Extrai linhas de Components
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^Components: ]]; then
+            current_components=($line)
+            # Remove "Components:" da primeira posição
+            unset current_components[0]
+
+            # Verifica e adiciona componentes faltantes
+            for comp in "${REQUIRED_COMPONENTS[@]}"; do
+                if [[ ! " ${current_components[@]} " =~ " $comp " ]]; then
+                    echo "➕ Adicionando '$comp' ao arquivo $file"
+                    sed -i "/^Components:/ s/$/ $comp/" "$file"
+                fi
+            done
+        fi
+    done < "$file"
+done
+
+echo "✅ Verificação concluída. Backups criados com extensão .bak"
