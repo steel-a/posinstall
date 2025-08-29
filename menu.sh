@@ -79,7 +79,7 @@ while true; do
 
   menu_list+=("Sair - ❌ Encerrar o script")
 
-  selected=$(printf "%s\n" "${menu_list[@]}" | fzf --prompt="Selecione o recurso: " --height=100% --border --layout=reverse)
+  selected=$(printf "%s\n" "${menu_list[@]}" | fzf --prompt="Selecione o recurso: " --height=80% --border --layout=reverse)
 
   opcao=$(echo "$selected" | cut -d' ' -f1)
 
