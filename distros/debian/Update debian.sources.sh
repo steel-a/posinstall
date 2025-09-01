@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sudo apt modernize-sources -y
+sudo apt modernize-sources -y 2>/dev/null || true
 
 # Componentes obrigatórios
 REQUIRED_COMPONENTS=("main" "contrib" "non-free" "non-free-firmware")
